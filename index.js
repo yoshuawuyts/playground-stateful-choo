@@ -40,9 +40,11 @@ function subView (state, prev, send) {
   `
 }
 
+// let's create some empty vars we can reference later
 let memoizedEl = null
 let mounted = false
 function memoizedSubView (state, prev, send) {
+  // the first run we got no memoized el yet. Cool, let's create one
   if (!memoizedEl) {
     memoizedEl = html`
       <div
@@ -54,12 +56,24 @@ function memoizedSubView (state, prev, send) {
         memoizedSubView
       </div>
     `
+
+    // we're going to be returning this el so it'll also be mounted. Let's mark
+    // it as such
     mounted = true
     return memoizedEl
   } else if (!mounted) {
+    // if our node for some reason was unmounted, onunload sets it as
+    // "unmounted". In that case we just return our unmounted node, and the
+    // "onload" action will be triggered again
     mounted = true
     return memoizedEl
   } else {
+    // welp, if our node is mounted, and exists, we return the proxy node. It
+    // means we can make it pretend like it's the already mounted node so we
+    // can tell the diffing algorithm to ignore it and not do anything. If we
+    // didn't pass this, or passed the actual mounted nodes the "onload" and
+    // "onunload" properties would be fired on every render and that's super
+    // bad. But yay, we can use this so we do that :D
     const placeholder = html`<template></template>`
     placeholder.isSameNode = (el) => el.isSameNode(memoizedEl)
     return placeholder
